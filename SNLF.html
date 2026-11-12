@@ -1,0 +1,715 @@
+<!-- Chosen Palette: Calm Slate & Emerald Harmony -->
+<!-- Application Structure Plan: Multi-tab Single Page Application (SPA) organized into 5 functional modules: Home & Market (inventory trading with $121k capital), Ship & Container (maritime voyage calculator), Trucks (Germany & Belfast fleet dispatch), Our Team (Saria & Noah directory), and Insurance & Privacy (digital signature pad and compliance policy). Chosen for clear task separation and instant balance synchronization across all operational modules. -->
+<!-- Visualization & Content Choices: Interactive inventory cards, live financial ledgers, dynamic maritime cost breakdown, fleet dispatch status indicators, and HTML5 Canvas signature pad. Confirming NO SVG graphics used and NO Mermaid JS used. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f172a" />
+  <title>SNLF — Global Trade, Maritime, Fleet & Insurance</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f8fafc;
+      color: #0f172a;
+    }
+    canvas#sig-pad {
+      touch-action: none;
+      cursor: crosshair;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between">
+
+  <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-emerald-500 flex items-center justify-center font-extrabold text-slate-950 text-xl tracking-tight">
+          SN
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold tracking-wide">SNLF</h1>
+          <p class="text-xs text-slate-400">Logistics, Fleet, Maritime & Trading Co.</p>
+        </div>
+      </div>
+
+      <nav class="flex flex-wrap items-center gap-2 bg-slate-800 p-1 rounded-xl">
+        <button onclick="switchTab('home')" id="tab-home" class="tab-btn px-3 py-2 rounded-lg text-sm font-semibold bg-emerald-500 text-slate-950 transition">
+          Home & Market
+        </button>
+        <button onclick="switchTab('ship')" id="tab-ship" class="tab-btn px-3 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:text-white transition">
+          Ship & Container
+        </button>
+        <button onclick="switchTab('fleet')" id="tab-fleet" class="tab-btn px-3 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:text-white transition">
+          🚚 Trucks (Germany & Belfast)
+        </button>
+        <button onclick="switchTab('team')" id="tab-team" class="tab-btn px-3 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:text-white transition">
+          Our Team
+        </button>
+        <button onclick="switchTab('insurance')" id="tab-insurance" class="tab-btn px-3 py-2 rounded-lg text-sm font-semibold text-slate-300 hover:text-white transition">
+          Insurance & Privacy
+        </button>
+      </nav>
+
+      <div class="flex items-center gap-3">
+        <div class="bg-slate-800 border border-slate-700 px-4 py-2 rounded-xl text-right">
+          <div class="text-[11px] uppercase tracking-wider text-slate-400 font-semibold">Company Balance</div>
+          <div id="balance-display" class="text-lg font-extrabold text-emerald-400">$121,000.00</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl w-full mx-auto px-4 py-8 flex-grow">
+
+    <section id="page-home" class="page-section space-y-6">
+      <div class="flex flex-wrap items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900">SNLF Trading & Inventory Hub</h2>
+          <p class="text-sm text-slate-500 mt-1">Starting capital: <span class="font-semibold text-slate-800">$121,000</span>. Click <strong>Add</strong> to purchase inventory (deducts cost) or <strong>Sell</strong> to sell for higher profit.</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <div class="bg-slate-100 px-4 py-2 rounded-xl text-sm">
+            <span class="text-slate-500">Total Units Held:</span>
+            <span id="total-units" class="font-bold text-slate-900 ml-1">0</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-500 mb-3">Create Custom Item</h3>
+        <form onsubmit="addCustomItem(event)" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+          <input type="text" id="custom-name" placeholder="Item Name (e.g. Cargo Drone)" required class="border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <input type="number" id="custom-buy" placeholder="Add Cost ($)" min="1" step="0.01" required class="border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <input type="number" id="custom-sell" placeholder="Sell Price ($)" min="1" step="0.01" required class="border border-slate-300 rounded-xl px-3.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+          <button type="submit" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold rounded-xl px-4 py-2 text-sm transition">
+            + Add Item to List
+          </button>
+        </form>
+      </div>
+
+      <div id="items-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <div class="flex items-center justify-between mb-3">
+          <h3 class="text-base font-bold text-slate-900">Recent Transactions</h3>
+          <button onclick="clearLog()" class="text-xs text-slate-500 hover:text-slate-800">Clear Log</button>
+        </div>
+        <div id="tx-log" class="space-y-2 max-h-56 overflow-y-auto text-sm text-slate-600">
+          <p class="text-slate-400 italic">No transactions yet. Add or sell an item above!</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-ship" class="page-section hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="text-2xl font-bold text-slate-900">My Ship & Single Container Calculator</h2>
+        <p class="text-sm text-slate-500 mt-1">Calculate your vessel expenses, one shipping container fee, marine fuel, and tax all together.</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Ship Name</label>
+              <input type="text" id="ship-name" value="MV SNLF Voyager" oninput="calcMaritime()" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-medium" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Ship Charter / Operating Cost ($)</label>
+              <input type="number" id="ship-cost" value="18500" min="0" step="100" oninput="calcMaritime()" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold uppercase text-slate-500 mb-1">One Container ID / Cargo</label>
+              <input type="text" id="container-id" value="SNLF-1001 (1x 40ft High Cube)" oninput="calcMaritime()" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-medium" />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-slate-500 mb-1">One Container Fee ($)</label>
+              <input type="number" id="container-cost" value="4200" min="0" step="50" oninput="calcMaritime()" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold" />
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Marine Fuel Cost ($)</label>
+              <input type="number" id="fuel-cost" value="6800" min="0" step="50" oninput="calcMaritime()" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold" />
+              <div class="flex gap-2 mt-2">
+                <button type="button" onclick="setFuel(3500)" class="text-xs bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg">Short Haul ($3,500)</button>
+                <button type="button" onclick="setFuel(6800)" class="text-xs bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg">Standard ($6,800)</button>
+                <button type="button" onclick="setFuel(12000)" class="text-xs bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg">Ocean ($12,000)</button>
+              </div>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-bold uppercase text-slate-500">Tax Rate / Amount</label>
+                <select id="tax-mode" onchange="calcMaritime()" class="text-xs border border-slate-300 rounded-lg px-2 py-0.5 bg-slate-50">
+                  <option value="percent">Percentage (%)</option>
+                  <option value="fixed">Fixed Amount ($)</option>
+                </select>
+              </div>
+              <input type="number" id="tax-value" value="15" min="0" step="0.5" oninput="calcMaritime()" class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm font-semibold" />
+              <p class="text-xs text-slate-400 mt-1">Applied to Ship + Container + Fuel subtotal when in % mode.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg flex flex-col justify-between space-y-6">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-400">Combined Voyage Breakdown</span>
+            <h3 id="summary-ship-title" class="text-xl font-extrabold mt-1">MV SNLF Voyager</h3>
+            <p id="summary-container-title" class="text-xs text-slate-400">SNLF-1001 (1x 40ft High Cube)</p>
+
+            <div class="mt-6 space-y-3 text-sm border-t border-slate-800 pt-4">
+              <div class="flex justify-between">
+                <span class="text-slate-400">My Ship Cost:</span>
+                <span id="out-ship" class="font-semibold">$18,500.00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">One Container:</span>
+                <span id="out-container" class="font-semibold">$4,200.00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Marine Fuel:</span>
+                <span id="out-fuel" class="font-semibold">$6,800.00</span>
+              </div>
+              <div class="flex justify-between border-t border-slate-800 pt-2">
+                <span class="text-slate-400">Subtotal:</span>
+                <span id="out-subtotal" class="font-semibold">$29,500.00</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-400">Port & Cargo Tax:</span>
+                <span id="out-tax" class="font-semibold text-amber-400">$4,425.00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-800 pt-4">
+            <div class="flex justify-between items-baseline mb-4">
+              <span class="text-sm font-bold text-slate-300">All Added Together:</span>
+              <span id="out-total" class="text-2xl font-extrabold text-emerald-400">$33,925.00</span>
+            </div>
+            <button onclick="payVoyage()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3 rounded-xl text-sm transition">
+              Pay Total From SNLF Balance
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-fleet" class="page-section hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="text-2xl font-bold text-slate-900">SNLF Truck Fleet (Germany & Belfast)</h2>
+        <p class="text-sm text-slate-500 mt-1">Manage and dispatch your two dedicated company trucks across Europe (Germany) and Northern Ireland (Belfast).</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between space-y-6">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">Europe Hub</span>
+              <span id="ger-status" class="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">Ready for Dispatch</span>
+            </div>
+            <div>
+              <h3 class="text-xl font-extrabold text-slate-900">Truck #1: Germany (Berlin / Frankfurt)</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Heavy Freight Euro-Truck Semi</p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-xl space-y-2 text-sm">
+              <div class="flex justify-between"><span class="text-slate-500">Fuel & Toll Cost:</span><span class="font-semibold">$1,450.00</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Driver Insurance:</span><span class="font-semibold">$350.00</span></div>
+              <div class="flex justify-between border-t border-slate-200 pt-2"><span class="text-slate-700 font-bold">Total Trip Cost:</span><span class="font-extrabold text-rose-600">$1,800.00</span></div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Assigned Germany Route / Cargo</label>
+              <input type="text" id="ger-route" value="Berlin to Munich Express Freight" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm font-medium" />
+            </div>
+          </div>
+          <button onclick="dispatchTruck('Germany', 1800, 'ger-route', 'ger-status')" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-sm transition">
+            Dispatch Germany Truck (-$1,800)
+          </button>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between space-y-6">
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg">UK / Ireland Hub</span>
+              <span id="bel-status" class="text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800">Ready for Dispatch</span>
+            </div>
+            <div>
+              <h3 class="text-xl font-extrabold text-slate-900">Truck #2: Belfast (Port Delivery)</h3>
+              <p class="text-xs text-slate-500 mt-0.5">Regional Container Haulage Truck</p>
+            </div>
+            <div class="bg-slate-50 p-4 rounded-xl space-y-2 text-sm">
+              <div class="flex justify-between"><span class="text-slate-500">Fuel & Port Toll:</span><span class="font-semibold">$950.00</span></div>
+              <div class="flex justify-between"><span class="text-slate-500">Driver Insurance:</span><span class="font-semibold">$250.00</span></div>
+              <div class="flex justify-between border-t border-slate-200 pt-2"><span class="text-slate-700 font-bold">Total Trip Cost:</span><span class="font-extrabold text-rose-600">$1,200.00</span></div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Assigned Belfast Route / Cargo</label>
+              <input type="text" id="bel-route" value="Belfast Port to Dublin Distribution" class="w-full border border-slate-300 rounded-xl px-3.5 py-2 text-sm font-medium" />
+            </div>
+          </div>
+          <button onclick="dispatchTruck('Belfast', 1200, 'bel-route', 'bel-status')" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-sm transition">
+            Dispatch Belfast Truck (-$1,200)
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-team" class="page-section hidden space-y-6">
+      <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+        <h2 class="text-2xl font-bold text-slate-900">People Who Work at SNLF</h2>
+        <p class="text-sm text-slate-500 mt-1">Official SNLF workforce roster and company permissions.</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-start gap-4">
+          <div class="w-14 h-14 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-extrabold text-xl shrink-0">
+            S
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <h3 class="text-xl font-bold text-slate-900">Saria</h3>
+              <span class="text-xs font-semibold bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full">Co-Founder & Worker</span>
+            </div>
+            <p class="text-sm text-slate-600">Oversees SNLF operations, $121k capital allocation, truck fleet dispatch, and company insurance sign-offs.</p>
+            <div class="pt-1">
+              <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-lg">
+                ✓ Authorized to Sign Insurance
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex items-start gap-4">
+          <div class="w-14 h-14 rounded-2xl bg-blue-100 text-blue-700 flex items-center justify-center font-extrabold text-xl shrink-0">
+            N
+          </div>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <h3 class="text-xl font-bold text-slate-900">Noah</h3>
+              <span class="text-xs font-semibold bg-blue-100 text-blue-800 px-2.5 py-0.5 rounded-full">Co-Worker & Friend</span>
+            </div>
+            <p class="text-sm text-slate-600">Core SNLF team member handling trade execution, inventory tracking, and European/UK logistics.</p>
+            <div class="pt-1">
+              <span class="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-lg">
+                Exempt from Insurance Signing Form
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="page-insurance" class="page-section hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-600">SNLF Coverage Portal</span>
+            <h2 class="text-2xl font-bold text-slate-900 mt-1">Company Insurance Sign-In</h2>
+            <p class="text-sm text-slate-500 mt-1">Enter your name and draw your signature below to sign in for SNLF insurance coverage. (Note: Noah is removed from signing.)</p>
+          </div>
+
+          <div id="signed-in-panel" class="hidden bg-emerald-50 border border-emerald-200 rounded-2xl p-5 space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs font-bold uppercase text-emerald-700">Currently Signed In For Insurance</div>
+                <div id="active-signer-name" class="text-xl font-extrabold text-slate-900 mt-0.5"></div>
+                <div id="active-sign-time" class="text-xs text-slate-500 mt-0.5"></div>
+              </div>
+              <span class="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold">ACTIVE</span>
+            </div>
+            <div class="bg-white p-3 rounded-xl border border-emerald-200">
+              <div class="text-[11px] text-slate-400 mb-1">Recorded Signature:</div>
+              <img id="saved-sig-img" alt="Saved Signature" class="max-h-24 mx-auto" />
+            </div>
+            <button onclick="signOutInsurance()" class="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-3 rounded-xl text-sm transition">
+              Sign Out of Insurance
+            </button>
+          </div>
+
+          <form id="insurance-form" onsubmit="signInInsurance(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Worker Full Name</label>
+              <input type="text" id="signer-name" placeholder="Enter your name (e.g. Saria)" required class="w-full border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500" />
+              <p id="noah-warning" class="hidden text-xs font-semibold text-rose-600 mt-1.5">
+                Noah has been taken off the insurance signing list and is not required or permitted to sign here.
+              </p>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="block text-xs font-bold uppercase text-slate-500">Draw Signature</label>
+                <button type="button" onclick="clearSignature()" class="text-xs text-slate-500 hover:text-slate-900 underline">Clear Pad</button>
+              </div>
+              <div class="border-2 border-dashed border-slate-300 rounded-xl bg-slate-50 overflow-hidden">
+                <canvas id="sig-pad" width="500" height="160" class="w-full h-40 block"></canvas>
+              </div>
+            </div>
+
+            <div class="flex items-start gap-2">
+              <input type="checkbox" id="agree-privacy" required class="mt-1 rounded text-emerald-600 focus:ring-emerald-500" />
+              <label for="agree-privacy" class="text-xs text-slate-600">
+                I agree to the SNLF Insurance Terms and acknowledge the SNLF Privacy Policy displayed on this page.
+              </label>
+            </div>
+
+            <button type="submit" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-3 rounded-xl text-sm transition">
+              Sign & Activate Insurance
+            </button>
+          </form>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <div class="border-b border-slate-100 pb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Legal & Compliance</span>
+            <h2 class="text-2xl font-bold text-slate-900 mt-1">SNLF Privacy Policy</h2>
+          </div>
+          <div class="space-y-3 text-sm text-slate-600 leading-relaxed">
+            <p>
+              <strong>1. Information We Collect:</strong> SNLF collects only the worker name and digital signature entered on this page strictly for internal company insurance verification and shift sign-in/sign-out records.
+            </p>
+            <p>
+              <strong>2. Worker Exemptions:</strong> Per SNLF internal policy, co-worker Noah is exempt and removed from the insurance signature requirement.
+            </p>
+            <p>
+              <strong>3. Local Storage & Security:</strong> Your balance ($121,000 starting capital), inventory records, ship calculations, truck dispatches, and insurance signature are stored locally on your device and are never sold or shared with external third parties.
+            </p>
+            <p>
+              <strong>4. Sign-Out & Data Removal:</strong> Workers must sign out at the end of their session using the Sign Out button, which immediately clears the active signature session from the portal.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="bg-white border-t border-slate-200 mt-12">
+    <div class="max-w-6xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500">
+      <div>SNLF Internal Operations Portal — Saria & Noah</div>
+      <div class="w-full sm:w-auto text-right font-semibold text-slate-700">
+        © 2026 SNLF. All rights reserved.
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const STARTING_BALANCE = 121000;
+    let balance = STARTING_BALANCE;
+
+    const defaultItems = [
+      { id: 1, name: "Standard Cargo Crate", buy: 1200, sell: 1850, qty: 0 },
+      { id: 2, name: "Electronics Pallet", buy: 4500, sell: 6400, qty: 0 },
+      { id: 3, name: "Industrial Generator", buy: 8200, sell: 11500, qty: 0 },
+      { id: 4, name: "Solar Panel Bundle", buy: 3400, sell: 4950, qty: 0 },
+      { id: 5, name: "Medical Supply Kit", buy: 2100, sell: 3200, qty: 0 },
+      { id: 6, name: "Steel Coil Batch", buy: 6000, sell: 8400, qty: 0 },
+      { id: 7, name: "Luxury Watch Box", buy: 9500, sell: 13800, qty: 0 },
+      { id: 8, name: "Marine Navigation Unit", buy: 5200, sell: 7300, qty: 0 },
+      { id: 9, name: "Coffee Bean Sack Lot", buy: 950, sell: 1500, qty: 0 },
+      { id: 10, name: "Auto Parts Container", buy: 7400, sell: 10200, qty: 0 },
+      { id: 11, name: "Smart Server Rack", buy: 14000, sell: 19200, qty: 0 },
+      { id: 12, name: "Aviation Fuel Drum", buy: 3100, sell: 4400, qty: 0 }
+    ];
+
+    let items = JSON.parse(JSON.stringify(defaultItems));
+    let logs = [];
+
+    function switchTab(tab) {
+      document.querySelectorAll('.page-section').forEach(el => el.classList.add('hidden'));
+      document.getElementById('page-' + tab).classList.remove('hidden');
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('bg-emerald-500', 'text-slate-950');
+        btn.classList.add('text-slate-300');
+      });
+      const activeBtn = document.getElementById('tab-' + tab);
+      activeBtn.classList.remove('text-slate-300');
+      activeBtn.classList.add('bg-emerald-500', 'text-slate-950');
+    }
+
+    function fmt(num) {
+      return '$' + Number(num).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function updateBalanceUI() {
+      document.getElementById('balance-display').textContent = fmt(balance);
+      const totalUnits = items.reduce((sum, item) => sum + item.qty, 0);
+      document.getElementById('total-units').textContent = totalUnits;
+    }
+
+    function renderItems() {
+      const grid = document.getElementById('items-grid');
+      grid.innerHTML = '';
+      items.forEach(item => {
+        const profit = item.sell - item.buy;
+        const card = document.createElement('div');
+        card.className = 'bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between gap-4';
+        card.innerHTML = `
+          <div>
+            <div class="flex items-start justify-between gap-2">
+              <h4 class="font-bold text-slate-900 text-base">${item.name}</h4>
+              <span class="text-xs font-bold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">Held: ${item.qty}</span>
+            </div>
+            <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+              <div class="bg-rose-50 text-rose-800 p-2 rounded-xl">
+                <div class="text-[10px] uppercase font-semibold opacity-75">Add Cost</div>
+                <div class="font-bold text-sm">-${fmt(item.buy)}</div>
+              </div>
+              <div class="bg-emerald-50 text-emerald-800 p-2 rounded-xl">
+                <div class="text-[10px] uppercase font-semibold opacity-75">Sell Return</div>
+                <div class="font-bold text-sm">+${fmt(item.sell)}</div>
+              </div>
+            </div>
+            <div class="text-[11px] text-slate-400 mt-2">Net profit per sale: <span class="text-emerald-600 font-semibold">+${fmt(profit)}</span></div>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="buyItem(${item.id})" class="bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2 rounded-xl text-xs transition">
+              Add (-${fmt(item.buy)})
+            </button>
+            <button onclick="sellItem(${item.id})" ${item.qty === 0 ? 'disabled' : ''} class="font-semibold py-2 rounded-xl text-xs transition ${item.qty === 0 ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'}">
+              Sell (+${fmt(item.sell)})
+            </button>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+      updateBalanceUI();
+    }
+
+    function buyItem(id) {
+      const item = items.find(i => i.id === id);
+      if (!item) return;
+      if (balance < item.buy) {
+        alert('Not enough balance to add ' + item.name + '!');
+        return;
+      }
+      balance -= item.buy;
+      item.qty += 1;
+      addLog(`Added 1x ${item.name} (-${fmt(item.buy)})`, 'text-rose-600');
+      renderItems();
+    }
+
+    function sellItem(id) {
+      const item = items.find(i => i.id === id);
+      if (!item || item.qty <= 0) return;
+      balance += item.sell;
+      item.qty -= 1;
+      addLog(`Sold 1x ${item.name} (+${fmt(item.sell)})`, 'text-emerald-600');
+      renderItems();
+    }
+
+    function addCustomItem(e) {
+      e.preventDefault();
+      const name = document.getElementById('custom-name').value.trim();
+      const buy = parseFloat(document.getElementById('custom-buy').value);
+      const sell = parseFloat(document.getElementById('custom-sell').value);
+      if (!name || isNaN(buy) || isNaN(sell)) return;
+      items.unshift({
+        id: Date.now(),
+        name,
+        buy,
+        sell,
+        qty: 0
+      });
+      document.getElementById('custom-name').value = '';
+      document.getElementById('custom-buy').value = '';
+      document.getElementById('custom-sell').value = '';
+      addLog(`Created new catalog item: ${name}`, 'text-slate-700');
+      renderItems();
+    }
+
+    function addLog(msg, colorClass) {
+      const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      logs.unshift({ time, msg, colorClass });
+      const logEl = document.getElementById('tx-log');
+      logEl.innerHTML = logs.map(l => `
+        <div class="flex justify-between items-center py-1.5 border-b border-slate-100 last:border-0">
+          <span class="font-medium ${l.colorClass}">${l.msg}</span>
+          <span class="text-xs text-slate-400">${l.time}</span>
+        </div>
+      `).join('');
+    }
+
+    function clearLog() {
+      logs = [];
+      document.getElementById('tx-log').innerHTML = '<p class="text-slate-400 italic">Log cleared.</p>';
+    }
+
+    function setFuel(val) {
+      document.getElementById('fuel-cost').value = val;
+      calcMaritime();
+    }
+
+    function calcMaritime() {
+      const shipName = document.getElementById('ship-name').value || 'Unnamed Ship';
+      const containerId = document.getElementById('container-id').value || '1x Container';
+      const shipCost = parseFloat(document.getElementById('ship-cost').value) || 0;
+      const containerCost = parseFloat(document.getElementById('container-cost').value) || 0;
+      const fuelCost = parseFloat(document.getElementById('fuel-cost').value) || 0;
+      const taxMode = document.getElementById('tax-mode').value;
+      const taxVal = parseFloat(document.getElementById('tax-value').value) || 0;
+
+      const subtotal = shipCost + containerCost + fuelCost;
+      const taxAmount = taxMode === 'percent' ? subtotal * (taxVal / 100) : taxVal;
+      const grandTotal = subtotal + taxAmount;
+
+      document.getElementById('summary-ship-title').textContent = shipName;
+      document.getElementById('summary-container-title').textContent = containerId;
+      document.getElementById('out-ship').textContent = fmt(shipCost);
+      document.getElementById('out-container').textContent = fmt(containerCost);
+      document.getElementById('out-fuel').textContent = fmt(fuelCost);
+      document.getElementById('out-subtotal').textContent = fmt(subtotal);
+      document.getElementById('out-tax').textContent = fmt(taxAmount);
+      document.getElementById('out-total').textContent = fmt(grandTotal);
+
+      return { shipName, containerId, grandTotal };
+    }
+
+    function payVoyage() {
+      const { shipName, containerId, grandTotal } = calcMaritime();
+      if (grandTotal <= 0) return;
+      if (balance < grandTotal) {
+        alert('Insufficient SNLF balance for this voyage total (' + fmt(grandTotal) + ').');
+        return;
+      }
+      balance -= grandTotal;
+      updateBalanceUI();
+      addLog(`Paid Maritime Voyage (${shipName} / ${containerId}): -${fmt(grandTotal)}`, 'text-amber-600');
+      alert(`Paid ${fmt(grandTotal)} from SNLF balance for ${shipName}!`);
+    }
+
+    function dispatchTruck(region, cost, routeInputId, statusId) {
+      const route = document.getElementById(routeInputId).value || region + ' Route';
+      if (balance < cost) {
+        alert('Insufficient SNLF balance to dispatch truck in ' + region + ' (' + fmt(cost) + ').');
+        return;
+      }
+      balance -= cost;
+      updateBalanceUI();
+      
+      const statusEl = document.getElementById(statusId);
+      statusEl.textContent = 'En Route';
+      statusEl.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800';
+
+      addLog(`Dispatched Truck (${region}) - Route: ${route} (-${fmt(cost)})`, 'text-indigo-600');
+      alert(`Truck successfully dispatched in ${region} for ${fmt(cost)}!`);
+
+      setTimeout(() => {
+        statusEl.textContent = 'Ready for Dispatch';
+        statusEl.className = 'text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800';
+        addLog(`Truck (${region}) completed route: ${route}`, 'text-emerald-600');
+      }, 8000);
+    }
+
+    const canvas = document.getElementById('sig-pad');
+    const ctx = canvas.getContext('2d');
+    let drawing = false;
+    let hasSigned = false;
+
+    function getPos(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      return {
+        x: (clientX - rect.left) * scaleX,
+        y: (clientY - rect.top) * scaleY
+      };
+    }
+
+    function startDraw(e) {
+      drawing = true;
+      hasSigned = true;
+      const pos = getPos(e);
+      ctx.beginPath();
+      ctx.moveTo(pos.x, pos.y);
+      e.preventDefault();
+    }
+
+    function draw(e) {
+      if (!drawing) return;
+      const pos = getPos(e);
+      ctx.lineWidth = 2.5;
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineTo(pos.x, pos.y);
+      ctx.stroke();
+      e.preventDefault();
+    }
+
+    function endDraw() {
+      drawing = false;
+    }
+
+    canvas.addEventListener('mousedown', startDraw);
+    canvas.addEventListener('mousemove', draw);
+    window.addEventListener('mouseup', endDraw);
+    canvas.addEventListener('touchstart', startDraw, { passive: false });
+    canvas.addEventListener('touchmove', draw, { passive: false });
+    window.addEventListener('touchend', endDraw);
+
+    function clearSignature() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hasSigned = false;
+    }
+
+    document.getElementById('signer-name').addEventListener('input', function () {
+      const val = this.value.trim().toLowerCase();
+      const warning = document.getElementById('noah-warning');
+      if (val === 'noah' || val.startsWith('noah ')) {
+        warning.classList.remove('hidden');
+      } else {
+        warning.classList.add('hidden');
+      }
+    });
+
+    function signInInsurance(e) {
+      e.preventDefault();
+      const rawName = document.getElementById('signer-name').value.trim();
+      if (!rawName) return;
+
+      if (rawName.toLowerCase() === 'noah' || rawName.toLowerCase().startsWith('noah ')) {
+        document.getElementById('noah-warning').classList.remove('hidden');
+        alert('Noah has been taken off the insurance signing form and cannot sign in here.');
+        return;
+      }
+
+      if (!hasSigned) {
+        alert('Please draw your signature in the signature box first.');
+        return;
+      }
+
+      const sigData = canvas.toDataURL();
+      document.getElementById('active-signer-name').textContent = rawName;
+      document.getElementById('active-sign-time').textContent = 'Signed in at ' + new Date().toLocaleString();
+      document.getElementById('saved-sig-img').src = sigData;
+
+      document.getElementById('insurance-form').classList.add('hidden');
+      document.getElementById('signed-in-panel').classList.remove('hidden');
+      addLog(`${rawName} signed in for SNLF Insurance`, 'text-emerald-600');
+    }
+
+    function signOutInsurance() {
+      const name = document.getElementById('active-signer-name').textContent;
+      document.getElementById('signed-in-panel').classList.add('hidden');
+      document.getElementById('insurance-form').classList.remove('hidden');
+      document.getElementById('signer-name').value = '';
+      document.getElementById('agree-privacy').checked = false;
+      clearSignature();
+      addLog(`${name} signed out of SNLF Insurance`, 'text-slate-600');
+    }
+
+    renderItems();
+    calcMaritime();
+  </script>
+</body>
+</html>
